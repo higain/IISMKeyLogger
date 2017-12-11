@@ -3,6 +3,9 @@ import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Main implements NativeKeyListener {
     private static FileLogger log;
 
@@ -31,6 +34,13 @@ public class Main implements NativeKeyListener {
 
     public static void main(String[] args) {
         log = new FileLogger();
+
+        Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
+        logger.setLevel(Level.WARNING);
+
+// Don't forget to disable the parent handlers.
+        logger.setUseParentHandlers(false);
+
         try {
             GlobalScreen.registerNativeHook();
         } catch (NativeHookException ex) {
