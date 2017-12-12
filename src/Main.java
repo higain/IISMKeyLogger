@@ -61,15 +61,20 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         Main starter = new Main();
         GlobalScreen.addNativeKeyListener(starter);
         GlobalScreen.addNativeMouseListener(starter);
+        GlobalScreen.addNativeMouseMotionListener(starter);
     }
 
     //Nicht implementierte Methoden
-    @Override
-    public void nativeMouseMoved(NativeMouseEvent nativeMouseEvent) {
+    // @Override
+    public void nativeMouseMoved(NativeMouseEvent e) {
+        // System.out.println("Mouse Moved: " + e.getX() + ", " + e.getY());
+        log.appendToLog(System.currentTimeMillis() + " " + "Mouse Moved: " + e.getX() + ", " + e.getY());
     }
 
     @Override
-    public void nativeMouseDragged(NativeMouseEvent nativeMouseEvent) {
+    public void nativeMouseDragged(NativeMouseEvent e) {
+        // System.out.println("Mouse Dragged: " + e.getX() + ", " + e.getY());
+        log.appendToLog(System.currentTimeMillis() + " " + "Mouse Dragged: " + e.getX() + ", " + e.getY());
     }
 
     @Override
