@@ -2,20 +2,50 @@ import lc.kra.system.mouse.event.GlobalMouseEvent;
 import lc.kra.system.mouse.event.GlobalMouseListener;
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
+import org.jnativehook.NativeInputEvent;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseInputListener;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main implements NativeKeyListener, NativeMouseInputListener {
     private static FileLogger log;
+    private static HashSet<Integer> pressedkeys;
+
+
+    /*public void nativeKeyPressed(NativeKeyEvent e) {
+        if (e.getKeyCode() == NativeKeyEvent.VC_B) {
+            System.out.print("Attempting to consume B event...\t");
+            try {
+                Field f = NativeInputEvent.class.getDeclaredField("reserved");
+                f.setAccessible(true);
+                f.setShort(e, (short) 0x01);
+
+                System.out.print("[ OK ]\n");
+            }
+            catch (Exception ex) {
+                System.out.print("[ !! ]\n");
+                ex.printStackTrace();
+            }
+        }
+    } */
 
     public void nativeKeyPressed(NativeKeyEvent e) {
         System.out.println("Key Pressed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
         log.appendToLog(System.currentTimeMillis() + " " + "Key Pressed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+        pressedkeys.add(e.getKeyCode());
+        printPressedKeys();
+
+        catchEvilShortcuts(e);
 
         if (e.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
             try {
@@ -26,9 +56,46 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         }
     }
 
+    public void printPressedKeys() {
+        System.out.println("Pressed keys: ");
+
+        for(int i : pressedkeys) {
+            System.out.print(i +" ");
+        }
+        System.out.println();
+    }
+
     public void nativeKeyReleased(NativeKeyEvent e) {
+
         System.out.println("Key Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
         log.appendToLog(System.currentTimeMillis() + " " + "Key Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+        pressedkeys.remove(e.getKeyCode());
+        printPressedKeys();
+
+        catchEvilShortcuts(e);
+    }
+
+    public void catchEvilShortcuts(NativeKeyEvent e) {
+        /* TODO: Kombinationen abfangen
+        *  Alt+Tab, Cmd+Q, Cmd+W, Cmd+Alt+Esc
+        */
+
+
+
+        if(pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_F4)) {
+            System.out.print("Attempting to consume B event...\t");
+            try {
+                Field f = NativeInputEvent.class.getDeclaredField("reserved");
+                f.setAccessible(true);
+                f.setShort(e, (short) 0x01);
+
+                System.out.print("[ OK ]\n");
+            }
+            catch (Exception ex) {
+                System.out.print("[ !! ]\n");
+                ex.printStackTrace();
+            }
+        }
     }
 
     public void nativeKeyTyped(NativeKeyEvent e) {
@@ -49,7 +116,10 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         logger.setLevel(Level.WARNING);
         logger.setUseParentHandlers(false);
 
+        pressedkeys = new HashSet<>();
+
         try {
+            GlobalScreen.setEventDispatcher(new VoidDispatchService());
             GlobalScreen.registerNativeHook();
         } catch (NativeHookException ex) {
             System.err.println("There was a problem registering the native hook.");
@@ -62,6 +132,7 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         GlobalScreen.addNativeKeyListener(starter);
         GlobalScreen.addNativeMouseListener(starter);
         GlobalScreen.addNativeMouseMotionListener(starter);
+
     }
 
     //Nicht implementierte Methoden
@@ -83,4 +154,38 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
     @Override
     public void nativeMouseClicked(NativeMouseEvent e) {
     }
+
+    private static class VoidDispatchService extends AbstractExecutorService {
+        private boolean running = false;
+
+        public VoidDispatchService() {
+            running = true;
+        }
+
+        public void shutdown() {
+            running = false;
+        }
+
+        public List<Runnable> shutdownNow() {
+            running = false;
+            return new ArrayList<Runnable>(0);
+        }
+
+        public boolean isShutdown() {
+            return !running;
+        }
+
+        public boolean isTerminated() {
+            return !running;
+        }
+
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            return true;
+        }
+
+        public void execute(Runnable r) {
+            r.run();
+        }
+    }
+
 }
