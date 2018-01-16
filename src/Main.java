@@ -1,3 +1,4 @@
+import jdk.nashorn.internal.objects.NativeError;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import lc.kra.system.mouse.event.GlobalMouseListener;
 import org.jnativehook.GlobalScreen;
@@ -8,6 +9,7 @@ import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseInputListener;
 
+import java.lang.annotation.Native;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,15 +47,15 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         pressedkeys.add(e.getKeyCode());
         printPressedKeys();
 
-        catchEvilShortcuts(e);
-
-        if (e.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
+        /*if ((pressedkeys.size() == 1) && (pressedkeys.contains(NativeKeyEvent.VC_ESCAPE))) {
             try {
+                System.exit(0);
                 GlobalScreen.unregisterNativeHook();
             } catch (NativeHookException e1) {
                 e1.printStackTrace();
             }
-        }
+        } */
+        catchEvilShortcuts(e);
     }
 
     public void printPressedKeys() {
@@ -78,12 +80,19 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
     public void catchEvilShortcuts(NativeKeyEvent e) {
         /* TODO: Kombinationen abfangen
         *  Alt+Tab, Cmd+Q, Cmd+W, Cmd+Alt+Esc
+        *  https://github.com/kwhat/jnativehook/blob/master/src/java/org/jnativehook/keyboard/NativeKeyEvent.java
         */
 
 
 
-        if(pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_F4)) {
+        if((pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_F4)) ||
+                (pressedkeys.contains(NativeKeyEvent.VC_CONTROL) && pressedkeys.contains(NativeKeyEvent.VC_W)) ||
+                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_Q)) ||
+                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_W)) ||
+                (pressedkeys.contains(NativeKeyEvent.VC_CONTROL) && pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_DELETE)) ||
+                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_ESCAPE))) {
             System.out.print("Attempting to consume B event...\t");
+
             try {
                 Field f = NativeInputEvent.class.getDeclaredField("reserved");
                 f.setAccessible(true);
