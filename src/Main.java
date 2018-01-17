@@ -11,35 +11,19 @@ import org.jnativehook.mouse.NativeMouseInputListener;
 
 import java.lang.annotation.Native;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main implements NativeKeyListener, NativeMouseInputListener {
     private static FileLogger log;
     private static HashSet<Integer> pressedkeys;
+    private static ArrayList<HashSet<Integer>> badShortcutMap;
 
-
-    /*public void nativeKeyPressed(NativeKeyEvent e) {
-        if (e.getKeyCode() == NativeKeyEvent.VC_B) {
-            System.out.print("Attempting to consume B event...\t");
-            try {
-                Field f = NativeInputEvent.class.getDeclaredField("reserved");
-                f.setAccessible(true);
-                f.setShort(e, (short) 0x01);
-
-                System.out.print("[ OK ]\n");
-            }
-            catch (Exception ex) {
-                System.out.print("[ !! ]\n");
-                ex.printStackTrace();
-            }
-        }
-    } */
 
     public void nativeKeyPressed(NativeKeyEvent e) {
         System.out.println("Key Pressed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
@@ -83,14 +67,15 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         *  https://github.com/kwhat/jnativehook/blob/master/src/java/org/jnativehook/keyboard/NativeKeyEvent.java
         */
 
-
-
-        if((pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_F4)) ||
-                (pressedkeys.contains(NativeKeyEvent.VC_CONTROL) && pressedkeys.contains(NativeKeyEvent.VC_W)) ||
-                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_Q)) ||
-                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_W)) ||
-                (pressedkeys.contains(NativeKeyEvent.VC_CONTROL) && pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_DELETE)) ||
-                (pressedkeys.contains(NativeKeyEvent.VC_META) && pressedkeys.contains(NativeKeyEvent.VC_ALT) && pressedkeys.contains(NativeKeyEvent.VC_ESCAPE))) {
+        boolean block = false;
+        for(HashSet<Integer> combo : badShortcutMap) {
+            if(pressedkeys.containsAll(combo)) {
+                block = true;
+                break;
+            }
+        }
+        if(block)
+        {
             System.out.print("Attempting to consume B event...\t");
 
             try {
@@ -126,6 +111,23 @@ public class Main implements NativeKeyListener, NativeMouseInputListener {
         logger.setUseParentHandlers(false);
 
         pressedkeys = new HashSet<>();
+        badShortcutMap = new ArrayList<>();
+
+        // Vorlage:
+        // badShortcutMap.add(Stream.of(  ).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_ALT, NativeKeyEvent.VC_F4).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_W).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_META, NativeKeyEvent.VC_Q).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_META, NativeKeyEvent.VC_W).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_ALT, NativeKeyEvent.VC_DELETE).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_META, NativeKeyEvent.VC_ALT, NativeKeyEvent.VC_ESCAPE).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_UP).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_DOWN).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_RIGHT).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_ALT, NativeKeyEvent.VC_TAB).collect(Collectors.toCollection(HashSet::new)));
+        badShortcutMap.add(Stream.of(NativeKeyEvent.VC_META, NativeKeyEvent.VC_TAB).collect(Collectors.toCollection(HashSet::new)));
+
 
         try {
             GlobalScreen.setEventDispatcher(new VoidDispatchService());
